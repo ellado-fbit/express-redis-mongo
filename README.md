@@ -3,10 +3,10 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 ## Middlewares
 
 | middleware    | description                                           |
-|---------------|-------------------------------------------------------|
-| redisGet      | Get the value of a key from Redis cache.              |
-| redisSet      | Set the string value of a key to Redis cache.         |
-| mongoFind     | `pending`                                             |
+|---------------|-----------------------------------------------------------------------|
+| redisGet      | Get the value of a key from Redis cache.                              |
+| redisSet      | Set the string value of a key to Redis cache.                         |
+| mongoFind     | Query documents of a MongoDB collection and optionally format results.|
 
 ## Install
 
@@ -91,4 +91,51 @@ app.use((err, req, res, next) => {
 const port = 3000
 app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 
+```
+
+## MongoDB `find` operation
+Middleware wrapper for the MongoDB 'find' method. Query documents of the database and the collection specified. The retrieved results will be available on the response via the 'results' property, by default. It also provides an optional parameter to format results.
+
+```js
+const express = require('express')
+const { MongoClient } = require('mongodb')
+const { mongoFind } = require('@fundaciobit/express-redis-mongo')
+
+const mongodbUri = 'mongodb://127.0.0.1:27017'
+
+// Open MongoDB connection
+MongoClient.connect(mongodbUri, { useUnifiedTopology: true, useNewUrlParser: true, poolSize: 10 })
+  .then(client => {
+    createApp(client)
+  })
+  .catch(err => {
+    console.log(err.message)
+    process.exit(1)
+  })
+
+const createApp = (mongoClient) => {
+  const app = express()
+
+  app.get('/companies/island/:island',
+    mongoFind({
+      mongoClient,
+      db: 'companies_db',
+      collection: 'companies_col',
+      query: (req) => ({ island: req.params.island }),
+      projection: { name: 1, address: 1, city: 1 },
+      limit: 0  // all results
+    }),
+    (req, res) => {
+      const { results } = res.locals
+      if (results) return res.status(200).json(results)
+      res.status(404).send('Not found')
+    })
+
+  app.use((err, req, res, next) => {
+    res.status(500).send(`Error: ${err.message}`)
+  })
+
+  const port = 3000
+  app.listen(port, () => { console.log(`Server running on port ${port}...`) })
+}
 ```
