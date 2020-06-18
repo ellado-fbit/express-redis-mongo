@@ -11,7 +11,7 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 ## Install
 
 ```bash
-npm install @fundaciobit/express-middleware
+npm install @fundaciobit/express-redis-mongo
 ```
 
 ## Redis GET command
@@ -20,7 +20,7 @@ Middleware wrapper for the Redis GET command. Get the value of a key from the Re
 ```js
 const express = require('express')
 const redis = require('redis')
-const { redisGet } = require('@fundaciobit/express-middleware')
+const { redisGet } = require('@fundaciobit/express-redis-mongo')
 
 const REDIS_DB_INDEX = 0
 const client = redis.createClient({ db: REDIS_DB_INDEX })
@@ -66,7 +66,7 @@ Middleware wrapper for the Redis SET command. Set the string value of a key.
 ```js
 const express = require('express')
 const redis = require('redis')
-const { redisSet } = require('@fundaciobit/express-middleware')
+const { redisSet } = require('@fundaciobit/express-redis-mongo')
 
 const REDIS_DB_INDEX = 0
 const client = redis.createClient({ db: REDIS_DB_INDEX })
