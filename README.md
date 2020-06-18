@@ -94,7 +94,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 ```
 
 ## MongoDB `find` operation
-Middleware wrapper for the MongoDB 'find' method. Query documents of the specified database and collection. The retrieved results will be available on the response via the 'results' property, by default. It also provides an optional parameter to format results.
+Middleware wrapper of the MongoDB 'find' method to query documents of the specified database and collection. The retrieved results will be available on the response via the 'results' property, by default. It also provides an optional parameter to format results.
 
 ```js
 const express = require('express')
@@ -120,18 +120,25 @@ MongoClient.connect(mongodbUri, {
 const createApp = (mongoClient) => {
   const app = express()
 
+  // Example of a formatter of results
+  const formatNameAndAddress = (items) => {
+    return items.map(x => ({ companyName: x.name, postalAddress: `${x.address}, ${x.postalCode} (${x.city})` }))
+  }
+
   app.get('/companies/island/:island',
     mongoFind({
       mongoClient,
       db: 'companies_db',
       collection: 'companies_col',
       query: (req) => ({ island: req.params.island }),
-      projection: { name: 1, address: 1, city: 1 },
-      limit: 0  // all results
+      projection: { name: 1, address: 1, postalCode: 1, city: 1 },
+      limit: 10,  // docs retrieved
+      formatResults: { formatters: [formatNameAndAddress] },
+      responseProperty: 'companies'
     }),
     (req, res) => {
-      const { results } = res.locals
-      if (results) return res.status(200).json(results)
+      const { companies } = res.locals
+      if (companies.length > 0) return res.status(200).json(companies)
       res.status(404).send('Not found')
     })
 

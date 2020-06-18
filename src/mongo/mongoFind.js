@@ -19,7 +19,7 @@ const mongoFind = (props) => {
       .then(items => {
 
         if (formatResults && formatResults.formatters) {
-          formatResults.formatters.forEach(formatter => formatter(items))
+          formatResults.formatters.forEach(formatter => items = formatter(items))
         }
 
         res.locals[responseProperty ? responseProperty : 'results'] = items

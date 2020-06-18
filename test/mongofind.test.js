@@ -21,6 +21,12 @@ describe('Testing MongoBD \'find\' opertion...', () => {
   test(`[mongoFind] Find item in collection`, done => {
     const req = {}
     const res = { locals: {} }
+
+    // Example of a formatter of results
+    const formatName = (items) => {
+      return items.map(x => ({ companyName: x.title }))
+    }
+
     const middleware = mongoFind({
       mongoClient,
       db: 'tie_db',
@@ -28,10 +34,12 @@ describe('Testing MongoBD \'find\' opertion...', () => {
       // eslint-disable-next-line no-unused-vars
       query: (req) => ({ 'tie_id': 'cedead8894244b54bae23361789ba3d5' }),
       projection: { _id: 0, title: 1 },
-      limit: 0
+      limit: 0,
+      formatResults: { formatters: [formatName] },
+      responseProperty: 'company'
     })
     middleware(req, res, err => {
-      expect(res.locals.results[0].title).toBe('MENORCA A CAVALL')
+      expect(res.locals.company[0].companyName).toBe('MENORCA A CAVALL')
       expect(err).toBeUndefined()
       done()
     })
