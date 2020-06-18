@@ -94,7 +94,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 ```
 
 ## MongoDB `find` operation
-Middleware wrapper for the MongoDB 'find' method. Query documents of the database and the collection specified. The retrieved results will be available on the response via the 'results' property, by default. It also provides an optional parameter to format results.
+Middleware wrapper for the MongoDB 'find' method. Query documents of the specified database and collection. The retrieved results will be available on the response via the 'results' property, by default. It also provides an optional parameter to format results.
 
 ```js
 const express = require('express')
@@ -104,7 +104,11 @@ const { mongoFind } = require('@fundaciobit/express-redis-mongo')
 const mongodbUri = 'mongodb://127.0.0.1:27017'
 
 // Open MongoDB connection
-MongoClient.connect(mongodbUri, { useUnifiedTopology: true, useNewUrlParser: true, poolSize: 10 })
+MongoClient.connect(mongodbUri, {
+  useUnifiedTopology: true,
+  useNewUrlParser: true,
+  poolSize: 10
+  })
   .then(client => {
     createApp(client)
   })
