@@ -23,5 +23,16 @@
     "jest": "^26.0.1",
     "redis": "^3.0.2"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ellado-fbit/express-redis-mongo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ellado-fbit/express-redis-mongo/issues"
+  },
+  "homepage": "https://github.com/ellado-fbit/express-redis-mongo#readme"
 }

@@ -74,11 +74,10 @@ const client = redis.createClient({ db: REDIS_DB_INDEX })
 const app = express()
 
 app.get('/username/:username',
-  ipv4(),  // set IPv4 in req.ipv4
   redisSet({
     client,
     key: (req) => req.path,
-    value: (req, res) => JSON.stringify({ username: req.params.username, ip_address: req.ipv4 }),
+    value: (req, res) => JSON.stringify({ username: req.params.username, ip_address: req.ip }),
     expiration: 600  // seconds
   }),
   (req, res) => {
