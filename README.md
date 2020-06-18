@@ -77,7 +77,7 @@ app.get('/username/:username',
   redisSet({
     client,
     key: (req) => req.path,
-    value: (req, res) => JSON.stringify({ username: req.params.username, ip_address: req.ip }),
+    value: (req, res) => JSON.stringify({ user: req.params.username, ip: req.ip }),
     expiration: 600  // seconds
   }),
   (req, res) => {
