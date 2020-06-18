@@ -94,7 +94,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 ```
 
 ## MongoDB `find` operation
-Middleware wrapper of the MongoDB 'find' method to query documents of the specified database and collection. The retrieved results will be available on the response via the 'results' property, by default. It also provides an optional parameter to format results.
+Middleware wrapper of the MongoDB 'find' method to query documents of the specified database and collection. The retrieved results are available via `res.locals.results` by default. It also provides an optional parameter to format results.
 
 ```js
 const express = require('express')
@@ -122,7 +122,10 @@ const createApp = (mongoClient) => {
 
   // Example of a formatter of results
   const formatNameAndAddress = (items) => {
-    return items.map(x => ({ companyName: x.name, postalAddress: `${x.address}, ${x.postalCode} (${x.city})` }))
+    return items.map(x => ({
+      companyName: x.name,
+      postalAddress: `${x.address}, ${x.postalCode} (${x.city})`
+    }))
   }
 
   app.get('/companies/island/:island',
