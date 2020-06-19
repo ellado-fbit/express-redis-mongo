@@ -158,7 +158,7 @@ Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a
 const express = require('express')
 const bodyParser = require('body-parser')
 const { MongoClient } = require('mongodb')
-const { mongoInsert } = require('@fundaciobit/express-redis-mongo')
+const { mongoInsertOne } = require('@fundaciobit/express-redis-mongo')
 
 const mongodbUri = 'mongodb://127.0.0.1:27017'
 
@@ -178,7 +178,7 @@ const createApp = (mongoClient) => {
   app.use(bodyParser.json())
 
   app.post('/companies',
-    mongoInsert({
+    mongoInsertOne({
       mongoClient,
       db: 'companies_db',
       collection: 'companies_col',
