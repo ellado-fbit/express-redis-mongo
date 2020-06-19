@@ -14,7 +14,7 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 npm install @fundaciobit/express-redis-mongo
 ```
 
-## Redis GET command
+## `redisGet`: Redis GET command
 Middleware wrapper for the Redis GET command. Get the value of a key from the Redis cache. Returned value is available via `res.locals.redisValue` by default.
 
 ```js
@@ -60,7 +60,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 
 ```
 
-## Redis SET command
+## `redisSet`: Redis `SET` command
 Middleware wrapper for the Redis SET command. Set the string value of a key.
 
 ```js
@@ -93,7 +93,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 
 ```
 
-## MongoDB `find` operation
+## `mongoFind`: MongoDB `find` operation
 Middleware wrapper of the MongoDB 'find' method to query documents of the specified database and collection. The retrieved results are available via `res.locals.results` by default. It also provides an optional parameter to format results.
 
 ```js
@@ -108,14 +108,14 @@ MongoClient.connect(mongodbUri, {
   useUnifiedTopology: true,
   useNewUrlParser: true,
   poolSize: 10
-  })
-  .then(client => {
-    createApp(client)
-  })
-  .catch(err => {
-    console.log(err.message)
-    process.exit(1)
-  })
+})
+.then(client => {
+  createApp(client)
+})
+.catch(err => {
+  console.log(err.message)
+  process.exit(1)
+})
 
 const createApp = (mongoClient) => {
   const app = express()
