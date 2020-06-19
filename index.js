@@ -3,9 +3,11 @@
 const redisGet = require('./src/redis/redisGet')
 const redisSet = require('./src/redis/redisSet')
 const mongoFind = require('./src/mongo/mongoFind')
+const mongoInsertOne = require('./src/mongo/mongoInsertOne')
 
 module.exports = {
   redisGet: redisGet,
   redisSet: redisSet,
-  mongoFind: mongoFind
+  mongoFind: mongoFind,
+  mongoInsertOne: mongoInsertOne
 }

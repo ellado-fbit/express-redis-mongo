@@ -1,7 +1,7 @@
 'use strict'
 
 // Middleware wrapper for the MongoDB 'find' method with optional parameter to format results.
-// The retrieved results will be available on the response via the 'results' property, by default.
+// The retrieved documents will be available on the response via the 'results' property, by default.
 
 const mongoFind = (props) => {
   return (req, res, next) => {
@@ -16,13 +16,13 @@ const mongoFind = (props) => {
     const formatResults = props.formatResults
 
     mongoClient.db(db).collection(collection).find(query(req), { projection: projection }).limit(limit).toArray()
-      .then(items => {
+      .then(docs => {
 
         if (formatResults && formatResults.formatters) {
-          formatResults.formatters.forEach(formatter => items = formatter(items))
+          formatResults.formatters.forEach(formatter => docs = formatter(docs))
         }
 
-        res.locals[responseProperty ? responseProperty : 'results'] = items
+        res.locals[responseProperty ? responseProperty : 'results'] = docs
         next()
       })
       .catch(error => {

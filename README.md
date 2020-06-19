@@ -7,6 +7,7 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 | redisGet      | Get the value of a key from Redis cache.                              |
 | redisSet      | Set the string value of a key to Redis cache.                         |
 | mongoFind     | Query documents of a MongoDB collection and optionally format results.|
+| mongoInsertOne| Inserts a document into a collection.                                 |
 
 ## Install
 
@@ -14,8 +15,8 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 npm install @fundaciobit/express-redis-mongo
 ```
 
-## `redisGet`: Redis GET command
-Middleware wrapper for the Redis GET command. Get the value of a key from the Redis cache. Returned value is available via `res.locals.redisValue` by default.
+## `redisGet`: Redis `GET` command
+Middleware wrapper for the Redis `GET` command. Get the value of a key from the Redis cache. Returned value is available on the response via `res.locals.redisValue` by default.
 
 ```js
 const express = require('express')
@@ -61,7 +62,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 ```
 
 ## `redisSet`: Redis `SET` command
-Middleware wrapper for the Redis SET command. Set the string value of a key.
+Middleware wrapper for the Redis `SET` command. Set the string value of a key.
 
 ```js
 const express = require('express')
@@ -94,7 +95,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 ```
 
 ## `mongoFind`: MongoDB `find` operation
-Middleware wrapper of the MongoDB 'find' method to query documents of the specified database and collection. The retrieved results are available via `res.locals.results` by default. It also provides an optional parameter to format results.
+Middleware wrapper of the MongoDB `find` method to query documents of the specified database and collection. The retrieved documents are available on the response via `res.locals.results` by default. It also provides an optional parameter to format results.
 
 ```js
 const express = require('express')
@@ -104,25 +105,21 @@ const { mongoFind } = require('@fundaciobit/express-redis-mongo')
 const mongodbUri = 'mongodb://127.0.0.1:27017'
 
 // Open MongoDB connection
-MongoClient.connect(mongodbUri, {
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
-  poolSize: 10
-})
-.then(client => {
-  createApp(client)
-})
-.catch(err => {
-  console.log(err.message)
-  process.exit(1)
-})
+MongoClient.connect(mongodbUri, { useUnifiedTopology: true, poolSize: 10 })
+  .then(client => {
+    createApp(client)
+  })
+  .catch(err => {
+    console.log(err.message)
+    process.exit(1)
+  })
 
 const createApp = (mongoClient) => {
   const app = express()
 
   // Example of a formatter of results
-  const formatNameAndAddress = (items) => {
-    return items.map(x => ({
+  const formatNameAndAddress = (docs) => {
+    return docs.map(x => ({
       companyName: x.name,
       postalAddress: `${x.address}, ${x.postalCode} (${x.city})`
     }))
@@ -143,6 +140,53 @@ const createApp = (mongoClient) => {
       const { companies } = res.locals
       if (companies.length > 0) return res.status(200).json(companies)
       res.status(404).send('Not found')
+    })
+
+  app.use((err, req, res, next) => {
+    res.status(500).send(`Error: ${err.message}`)
+  })
+
+  const port = 3000
+  app.listen(port, () => { console.log(`Server running on port ${port}...`) })
+}
+```
+
+## `mongoInsertOne`: MongoDB `insertOne` operation
+Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a collection. The inserted document is available on the response via the `res.locals.docInserted` by default.
+
+```js
+const express = require('express')
+const bodyParser = require('body-parser')
+const { MongoClient } = require('mongodb')
+const { mongoInsert } = require('@fundaciobit/express-redis-mongo')
+
+const mongodbUri = 'mongodb://127.0.0.1:27017'
+
+// Open MongoDB connection
+MongoClient.connect(mongodbUri, { useUnifiedTopology: true, poolSize: 10 })
+  .then(client => {
+    createApp(client)
+  })
+  .catch(err => {
+    console.log(err.message)
+    process.exit(1)
+  })
+
+const createApp = (mongoClient) => {
+  const app = express()
+
+  app.use(bodyParser.json())
+
+  app.post('/companies',
+    mongoInsert({
+      mongoClient,
+      db: 'companies_db',
+      collection: 'companies_col',
+      docToInsert: (req, res) => req.body
+    }),
+    (req, res) => {
+      const { docInserted } = res.locals
+      res.status(200).json({ docInserted })
     })
 
   app.use((err, req, res, next) => {
