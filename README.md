@@ -28,6 +28,7 @@ const client = redis.createClient({ db: REDIS_DB_INDEX })
 
 const app = express()
 
+// Example 1
 app.get('/username/esteve',
   redisGet({
     client,
@@ -40,6 +41,7 @@ app.get('/username/esteve',
     res.status(404).send('Not found')
   })
 
+// Example 2
 app.get('/username/:username',
   redisGet({
     client,
@@ -117,14 +119,6 @@ MongoClient.connect(mongodbUri, { useUnifiedTopology: true, poolSize: 10 })
 const createApp = (mongoClient) => {
   const app = express()
 
-  // Example of a formatter of results
-  const formatNameAndAddress = (docs) => {
-    return docs.map(x => ({
-      companyName: x.name,
-      postalAddress: `${x.address}, ${x.postalCode} (${x.city})`
-    }))
-  }
-
   app.get('/companies/island/:island',
     mongoFind({
       mongoClient,
@@ -133,7 +127,14 @@ const createApp = (mongoClient) => {
       query: (req) => ({ island: req.params.island }),
       projection: { name: 1, address: 1, postalCode: 1, city: 1 },
       limit: 10,  // docs retrieved
-      formatResults: { formatters: [formatNameAndAddress] },
+      formatResults: {
+        formatters: [(docs) => {
+          return docs.map(x => ({
+            companyName: x.name,
+            postalAddress: `${x.address}, ${x.postalCode} (${x.city})`
+          }))
+        }]
+      },
       responseProperty: 'companies'
     }),
     (req, res) => {
@@ -152,7 +153,7 @@ const createApp = (mongoClient) => {
 ```
 
 ## `mongoInsertOne`: MongoDB `insertOne` operation
-Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a collection. The inserted document is available on the response via the `res.locals.docInserted` by default.
+Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a collection. The `_id` of the inserted document is available on the response via the `res.locals.insertedId` by default.
 
 ```js
 const express = require('express')
@@ -185,8 +186,8 @@ const createApp = (mongoClient) => {
       docToInsert: (req, res) => req.body
     }),
     (req, res) => {
-      const { docInserted } = res.locals
-      res.status(200).json({ docInserted })
+      const { insertedId } = res.locals
+      res.status(200).json({ _id: insertedId })
     })
 
   app.use((err, req, res, next) => {

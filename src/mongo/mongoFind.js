@@ -1,7 +1,7 @@
 'use strict'
 
 // Middleware wrapper for the MongoDB 'find' method with optional parameter to format results.
-// The retrieved documents will be available on the response via the 'results' property, by default.
+// The retrieved documents will be available on the response via the 'res.locals.results' by default.
 
 const mongoFind = (props) => {
   return (req, res, next) => {
