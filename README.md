@@ -1,8 +1,10 @@
+# Express wrappers for Redis and MongoDB
+
 A useful collection of Express middleware wrappers for Redis and MongoDB.
 
 ## Middlewares
 
-| middleware    | description                                           |
+| middleware    | description                                                           |
 |---------------|-----------------------------------------------------------------------|
 | redisGet      | Get the value of a key from Redis cache.                              |
 | redisSet      | Set the string value of a key to Redis cache.                         |
@@ -16,6 +18,7 @@ npm install @fundaciobit/express-redis-mongo
 ```
 
 ## `redisGet`: Redis `GET` command
+
 Middleware wrapper for the Redis `GET` command. Get the value of a key from the Redis cache. Returned value is available on the response via `res.locals.redisValue` by default.
 
 ```js
@@ -28,8 +31,7 @@ const client = redis.createClient({ db: REDIS_DB_INDEX })
 
 const app = express()
 
-// Example 1
-app.get('/username/esteve',
+app.get('/companies/island/:island',
   redisGet({
     client,
     key: (req) => req.path,
@@ -41,21 +43,8 @@ app.get('/username/esteve',
     res.status(404).send('Not found')
   })
 
-// Example 2
-app.get('/username/:username',
-  redisGet({
-    client,
-    key: (req) => req.params.username,
-    responseProperty: 'cachedData'
-  }),
-  (req, res) => {
-    const { cachedData } = res.locals
-    if (cachedData) return res.status(200).send(cachedData)
-    res.status(404).send('Not found')
-  })
-
 app.use((err, req, res, next) => {
-  res.status(500).send(`Error: ${err.message}`)
+  res.status(500).send(err.toString())
 })
 
 const port = 3000
@@ -64,6 +53,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 ```
 
 ## `redisSet`: Redis `SET` command
+
 Middleware wrapper for the Redis `SET` command. Set the string value of a key.
 
 ```js
@@ -76,7 +66,7 @@ const client = redis.createClient({ db: REDIS_DB_INDEX })
 
 const app = express()
 
-app.get('/username/:username',
+app.get('/users/:username',
   redisSet({
     client,
     key: (req) => req.path,
@@ -88,7 +78,7 @@ app.get('/username/:username',
   })
 
 app.use((err, req, res, next) => {
-  res.status(500).send(`Error: ${err.message}`)
+  res.status(500).send(err.toString())
 })
 
 const port = 3000
@@ -97,6 +87,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 ```
 
 ## `mongoFind`: MongoDB `find` operation
+
 Middleware wrapper of the MongoDB `find` method to query documents of the specified database and collection. The retrieved documents are available on the response via `res.locals.results` by default. It also provides an optional parameter to format results.
 
 ```js
@@ -140,11 +131,11 @@ const createApp = (mongoClient) => {
     (req, res) => {
       const { companies } = res.locals
       if (companies.length > 0) return res.status(200).json(companies)
-      res.status(404).send('Not found')
+      res.status(204).send('No content found')
     })
 
   app.use((err, req, res, next) => {
-    res.status(500).send(`Error: ${err.message}`)
+    res.status(500).send(err.toString())
   })
 
   const port = 3000
@@ -153,6 +144,7 @@ const createApp = (mongoClient) => {
 ```
 
 ## `mongoInsertOne`: MongoDB `insertOne` operation
+
 Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a collection. The `_id` of the inserted document is available on the response via the `res.locals.insertedId` by default.
 
 ```js
@@ -191,7 +183,7 @@ const createApp = (mongoClient) => {
     })
 
   app.use((err, req, res, next) => {
-    res.status(500).send(`Error: ${err.message}`)
+    res.status(500).send(err.toString())
   })
 
   const port = 3000
