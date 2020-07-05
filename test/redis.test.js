@@ -151,15 +151,15 @@ describe('Testing Redis middlewares...', () => {
     })
   })
 
-  // test(`[redisGet] (Check error) extracted value is not a valid JSON format (error in JSON.parse)`, done => {
-  //   const req = { key: 'juan' }
-  //   const res = { locals: {} }
-  //   const middleware = redisGet({ client, key: (req) => req.key, parseResults: true })
-  //   middleware(req, res, err => {
-  //     expect(err).toBeDefined()
-  //     done()
-  //   })
-  // })
+  test(`[redisGet] (Check error) extracted value is not a valid JSON format (error in JSON.parse)`, done => {
+    const req = { key: 'juan' }
+    const res = { locals: {} }
+    const middleware = redisGet({ client, key: (req) => req.key, parseResults: true })
+    middleware(req, res, err => {
+      expect(err).toBeDefined()
+      done()
+    })
+  })
 
   test(`+[redisSet] Set value for key 'federico'`, done => {
     const req = { key: 'federico' }
@@ -234,10 +234,10 @@ describe('Testing Redis middlewares...', () => {
   test(`[redisGet] Get unexisting Key`, done => {
     const req = { key: 'miguelcalderon' }
     const res = { locals: {} }
-    const middleware = redisGet({ client, key: (req) => req.key })
+    const middleware = redisGet({ client, key: (req) => req.key, parseResults: true })
     // eslint-disable-next-line no-unused-vars
     middleware(req, res, err => {
-      expect(res.locals.redisValue).toBeUndefined()
+      expect(res.locals.redisValue).toBeNull()
       expect(err).toBeUndefined()
       done()
     })

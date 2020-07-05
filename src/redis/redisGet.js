@@ -1,7 +1,6 @@
 'use strict'
 
-// Middleware wrapper for the Redis GET command.
-// Get the value of a key from the Redis cache.
+// Middleware wrapper for the Redis GET command. Get the value of a key from the Redis cache.
 // Returned value will be available on 'res.locals.redisValue' by default.
 
 const redisGet = (props) => {
@@ -13,7 +12,6 @@ const redisGet = (props) => {
     const responseProperty = props.responseProperty
 
     try {
-
       if (!client) {
         throw new Error('\'client\' parameter is required')
       }
@@ -38,33 +36,23 @@ const redisGet = (props) => {
         throw new Error('\'responseProperty\' parameter must be string')
       }
 
-      client.get(key(req), (err, value) => {
-        if (err) {
-          err.message = `[redisGet] ${err.message}`
-          next(err)
-        }
-
-        if (value) {
-
-          if (parseResults) {
-            try {
-              value = JSON.parse(value)
-            } catch (err) {
-              err.message = `[redisGet] The value extracted from Redis is not a valid JSON format: ${err.message}`
-              next(err)
-            }
-          }
-
-          res.locals[responseProperty ? responseProperty : 'redisValue'] = value
-        }
-
-        next()
-      })
-
     } catch (error) {
       error.message = `[redisGet] ${error.message}`
-      next(error)
+      return next(error)
     }
+
+    client.get(key(req), (err, value) => {
+      try {
+        if (err) throw err
+
+        res.locals[responseProperty ? responseProperty : 'redisValue'] = parseResults ? JSON.parse(value) : value
+        return next()
+
+      } catch (error) {
+        error.message = `[redisGet] ${error.message}`
+        return next(error)
+      }
+    })
 
   }
 }
