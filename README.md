@@ -10,6 +10,7 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 | redisSet      | Set the string value of a key to Redis cache.                         |
 | mongoFind     | Query documents of a MongoDB collection and optionally format results.|
 | mongoInsertOne| Inserts a document into a collection.                                 |
+| mongoDeleteOne| Deletes a document from a collection.                                 |
 
 ## Install
 
@@ -17,7 +18,15 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 npm install @fundaciobit/express-redis-mongo
 ```
 
-## `redisGet`: Redis `GET` command
+## Index
+
+- [`redisGet`](#redisget)
+- [`redisSet`](#redisset)
+- [`mongoFind`](#mongofind)
+- [`mongoInsertOne`](#mongoinsertone)
+- [`mongoDeleteOne`](#mongodeleteone)
+
+## `redisGet`
 
 Middleware wrapper for the Redis `GET` command. Get the value of a key from the Redis cache. Returned value is available on the response via `res.locals.redisValue` by default.
 
@@ -52,7 +61,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 
 ```
 
-## `redisSet`: Redis `SET` command
+## `redisSet`
 
 Middleware wrapper for the Redis `SET` command. Set the string value of a key.
 
@@ -86,7 +95,7 @@ app.listen(port, () => { console.log(`Server running on port ${port}...`) })
 
 ```
 
-## `mongoFind`: MongoDB `find` operation
+## `mongoFind`
 
 Middleware wrapper of the MongoDB `find` method to query documents of the specified database and collection. The retrieved documents are available on the response via `res.locals.results` by default. It also provides an optional parameter to format results.
 
@@ -118,6 +127,7 @@ const createApp = (mongoClient) => {
       query: (req) => ({ island: req.params.island }),
       projection: { name: 1, address: 1, postalCode: 1, city: 1 },
       limit: 10,  // docs retrieved
+      sort: { name: 1 },
       formatResults: {
         formatters: [(docs) => {
           return docs.map(x => ({
@@ -143,7 +153,7 @@ const createApp = (mongoClient) => {
 }
 ```
 
-## `mongoInsertOne`: MongoDB `insertOne` operation
+## `mongoInsertOne`
 
 Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a collection. The `_id` of the inserted document is available on the response via the `res.locals.insertedId` by default.
 
@@ -180,6 +190,50 @@ const createApp = (mongoClient) => {
     (req, res) => {
       const { insertedId } = res.locals
       res.status(200).json({ _id: insertedId })
+    })
+
+  app.use((err, req, res, next) => {
+    res.status(500).send(err.toString())
+  })
+
+  const port = 3000
+  app.listen(port, () => { console.log(`Server running on port ${port}...`) })
+}
+```
+
+## `mongoDeleteOne`
+
+Middleware wrapper for the MongoDB `deleteOne` operation. Deletes the first document that matches the filter.
+
+```js
+const express = require('express')
+const { MongoClient } = require('mongodb')
+const { mongoDeleteOne } = require('@fundaciobit/express-redis-mongo')
+
+const mongodbUri = 'mongodb://127.0.0.1:27017'
+
+// Open MongoDB connection
+MongoClient.connect(mongodbUri, { useUnifiedTopology: true, poolSize: 10 })
+  .then(client => {
+    createApp(client)
+  })
+  .catch(err => {
+    console.log(err.message)
+    process.exit(1)
+  })
+
+const createApp = (mongoClient) => {
+  const app = express()
+
+  app.delete('/companies/id/:id',
+    mongoDeleteOne({
+      mongoClient,
+      db: 'companies_db',
+      collection: 'companies_col',
+      filter: (req) => ({ _id: req.params.id })
+    }),
+    (req, res) => {
+      res.sendStatus(200)
     })
 
   app.use((err, req, res, next) => {

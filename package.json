@@ -1,11 +1,13 @@
 {
   "name": "@fundaciobit/express-redis-mongo",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "A useful collection of Express middleware wrappers for Redis and MongoDB.",
   "author": "Esteve Lladó <ellado@fundaciobit.org>",
   "main": "index.js",
   "scripts": {
-    "test": "jest --verbose"
+    "test": "jest --verbose",
+    "test-redis": "jest redis.test.js --verbose",
+    "test-mongo": "jest mongo.test.js --verbose"
   },
   "keywords": [
     "express",
