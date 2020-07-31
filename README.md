@@ -8,6 +8,7 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 |---------------|-----------------------------------------------------------------------|
 | redisGet      | Get the value of a key from Redis cache.                              |
 | redisSet      | Set the string value of a key to Redis cache.                         |
+| redisDel      | Deletes a key from the Redis cache.                                   |
 | mongoFind     | Query documents of a MongoDB collection and optionally format results.|
 | mongoInsertOne| Inserts a document into a collection.                                 |
 | mongoDeleteOne| Deletes a document from a collection.                                 |
@@ -22,6 +23,7 @@ npm install @fundaciobit/express-redis-mongo
 
 - [`redisGet`](#redisget)
 - [`redisSet`](#redisset)
+- [`redisDel`](#redisdel)
 - [`mongoFind`](#mongofind)
 - [`mongoInsertOne`](#mongoinsertone)
 - [`mongoDeleteOne`](#mongodeleteone)
@@ -53,7 +55,8 @@ app.get('/companies/island/:island',
   })
 
 app.use((err, req, res, next) => {
-  res.status(500).send(err.toString())
+  if (!err.statusCode) err.statusCode = 500
+  res.status(err.statusCode).send(err.toString())
 })
 
 const port = 3000
@@ -67,6 +70,7 @@ Middleware wrapper for the Redis `SET` command. Set the string value of a key.
 
 ```js
 const express = require('express')
+const bodyParser = require('body-parser')
 const redis = require('redis')
 const { redisSet } = require('@fundaciobit/express-redis-mongo')
 
@@ -75,11 +79,13 @@ const client = redis.createClient({ db: REDIS_DB_INDEX })
 
 const app = express()
 
-app.get('/users/:username',
+app.use(bodyParser.json())
+
+app.post('/users',
   redisSet({
     client,
-    key: (req) => req.path,
-    value: (req, res) => JSON.stringify({ user: req.params.username, ip: req.ip }),
+    key: (req) => req.body.username,
+    value: (req, res) => JSON.stringify({ ip: req.ip }),
     expiration: 600  // seconds
   }),
   (req, res) => {
@@ -87,7 +93,43 @@ app.get('/users/:username',
   })
 
 app.use((err, req, res, next) => {
-  res.status(500).send(err.toString())
+  if (!err.statusCode) err.statusCode = 500
+  res.status(err.statusCode).send(err.toString())
+})
+
+const port = 3000
+app.listen(port, () => { console.log(`Server running on port ${port}...`) })
+
+```
+
+## `redisDel`
+
+Middleware wrapper for the Redis DEL command. Deletes a key from the Redis cache. Redis response will be available on `res.locals.redisResponse`. The response will be (integer) 1 in a delete successful operation.
+
+```js
+const express = require('express')
+const redis = require('redis')
+const { redisDel } = require('@fundaciobit/express-redis-mongo')
+
+const REDIS_DB_INDEX = 0
+const client = redis.createClient({ db: REDIS_DB_INDEX })
+
+const app = express()
+
+app.delete('/users/:username',
+  redisDel({
+    client,
+    key: (req) => req.params.username
+  }),
+  (req, res) => {
+    const { redisResponse } = res.locals
+    if (redisResponse === 1) return res.status(200).send('Deleted Successfully')
+    res.status(404).send('Not found')
+  })
+
+app.use((err, req, res, next) => {
+  if (!err.statusCode) err.statusCode = 500
+  res.status(err.statusCode).send(err.toString())
 })
 
 const port = 3000
@@ -145,7 +187,8 @@ const createApp = (mongoClient) => {
     })
 
   app.use((err, req, res, next) => {
-    res.status(500).send(err.toString())
+    if (!err.statusCode) err.statusCode = 500
+    res.status(err.statusCode).send(err.toString())
   })
 
   const port = 3000
@@ -193,7 +236,8 @@ const createApp = (mongoClient) => {
     })
 
   app.use((err, req, res, next) => {
-    res.status(500).send(err.toString())
+    if (!err.statusCode) err.statusCode = 500
+    res.status(err.statusCode).send(err.toString())
   })
 
   const port = 3000
@@ -237,7 +281,8 @@ const createApp = (mongoClient) => {
     })
 
   app.use((err, req, res, next) => {
-    res.status(500).send(err.toString())
+    if (!err.statusCode) err.statusCode = 500
+    res.status(err.statusCode).send(err.toString())
   })
 
   const port = 3000

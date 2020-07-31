@@ -3,6 +3,8 @@
 // Middleware wrapper for the Redis SET command.
 // Set the string value of a key.
 
+const RequiredParamError  = require('../errors/errors').RequiredParamError
+
 const redisSet = (props) => {
   return (req, res, next) => {
 
@@ -14,60 +16,33 @@ const redisSet = (props) => {
     const errRequiredMsg = (param) => `'${param}' parameter is required`
 
     try {
+      if (!client) throw new RequiredParamError(errRequiredMsg('client'))
+      if (!key) throw new RequiredParamError(errRequiredMsg('key'))
+      if (!value) throw new RequiredParamError(errRequiredMsg('value'))
+      if (!expiration) throw new RequiredParamError(errRequiredMsg('expiration'))
 
-      if (!client) {
-        throw new Error(errRequiredMsg('client'))
-      }
-
-      if (!key) {
-        throw new Error(errRequiredMsg('key'))
-      }
-
-      if (!value) {
-        throw new Error(errRequiredMsg('value'))
-      }
-
-      if (!expiration) {
-        throw new Error(errRequiredMsg('expiration'))
-      }
-
-      if (typeof(key) !== 'function') {
-        throw new Error('\'key\' parameter must be a function that accepts req object as parameter')
-      }
-
-      if (typeof(key(req)) !== 'string') {
-        throw new Error('\'key\' function parameter must return a string')
-      }
-
-      if (typeof(value) !== 'function') {
-        throw new Error('\'value\' parameter must be a function that accepts req and res objects as parameter')
-      }
-
-      if (typeof(value(req, res)) !== 'string') {
-        throw new Error('\'value\' function parameter must return a string')
-      }
-
-      if (!Number.isInteger(expiration)) {
-        throw new Error(`'expiration' parameter must be integer`)
-      }
-
-      if (expiration <= 0) {
-        throw new Error(`'expiration' parameter must be greater than zero`)
-      }
-
-      client.set(key(req), value(req, res), 'EX', expiration, (err) => {
-        if (err) {
-          err.message = `[redisSet] ${err.message}`
-          next(err)
-        } else {
-          next()
-        }
-      })
-
+      if (typeof(key) !== 'function') throw new TypeError(`'key' parameter must be a function that accepts req object as parameter`)
+      if (typeof(key(req)) !== 'string') throw new TypeError(`'key' function parameter must return a string`)
+      if (typeof(value) !== 'function') throw new TypeError(`'value' parameter must be a function that accepts req and res objects as parameters`)
+      if (typeof(value(req, res)) !== 'string') throw new TypeError(`'value' function parameter must return a string`)
+      if (!Number.isInteger(expiration)) throw new TypeError(`'expiration' parameter must be an integer number`)
+      if (expiration <= 0) throw new TypeError(`'expiration' parameter must be greater than zero`)
     } catch (error) {
       error.message = `[redisSet] ${error.message}`
-      next(error)
+      return next(error)
     }
+
+    client.set(key(req), value(req, res), 'EX', expiration, (err) => {
+      try {
+        if (err) throw err
+
+        return next()
+
+      } catch (error) {
+        error.message = `[redisSet] ${error.message}`
+        return next(error)
+      }
+    })
 
   }
 }
