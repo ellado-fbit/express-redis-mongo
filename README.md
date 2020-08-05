@@ -4,14 +4,14 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 
 ## Middlewares
 
-| middleware    | description                                                           |
-|---------------|-----------------------------------------------------------------------|
-| redisGet      | Get the value of a key from Redis cache.                              |
-| redisSet      | Set the string value of a key to Redis cache.                         |
-| redisDel      | Deletes a key from the Redis cache.                                   |
-| mongoFind     | Query documents of a MongoDB collection and optionally format results.|
-| mongoInsertOne| Inserts a document into a collection.                                 |
-| mongoDeleteOne| Deletes a document from a collection.                                 |
+| middleware     | description                                                           |
+|----------------|-----------------------------------------------------------------------|
+| redisGet       | Get the value of a key from Redis cache.                              |
+| redisSet       | Set the string value of a key to Redis cache.                         |
+| redisDel       | Delete a key from the Redis cache.                                    |
+| mongoFind      | Query documents of a MongoDB collection and optionally format results.|
+| mongoInsertOne | Insert a document into a MongoDB collection.                          |
+| mongoDeleteOne | Delete a document from a MongoDB collection.                          |
 
 ## Install
 
