@@ -4,14 +4,15 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 
 ## Middlewares
 
-| middleware     | description                                                           |
-|----------------|-----------------------------------------------------------------------|
-| redisGet       | Get the value of a key from Redis cache.                              |
-| redisSet       | Set the string value of a key to Redis cache.                         |
-| redisDel       | Delete a key from the Redis cache.                                    |
-| mongoFind      | Query documents of a MongoDB collection and optionally format results.|
-| mongoInsertOne | Insert a document into a MongoDB collection.                          |
-| mongoDeleteOne | Delete a document from a MongoDB collection.                          |
+| middleware     | description                                                             |
+|----------------|-------------------------------------------------------------------------|
+| redisGet       | Get the value of a key from Redis cache.                                |
+| redisSet       | Set the string value of a key to Redis cache.                           |
+| redisDel       | Delete a key from the Redis cache.                                      |
+| mongoFind      | Query documents of a MongoDB collection and optionally format results.  |
+| mongoFindOne   | Query one document of a MongoDB collection and optionally format result.|
+| mongoInsertOne | Insert a document into a MongoDB collection.                            |
+| mongoDeleteOne | Delete a document from a MongoDB collection.                            |
 
 ## Install
 
@@ -25,6 +26,7 @@ npm install @fundaciobit/express-redis-mongo
 - [`redisSet`](#redisset)
 - [`redisDel`](#redisdel)
 - [`mongoFind`](#mongofind)
+- [`mongoFindOne`](#mongofindone)
 - [`mongoInsertOne`](#mongoinsertone)
 - [`mongoDeleteOne`](#mongodeleteone)
 
@@ -182,8 +184,57 @@ const createApp = (mongoClient) => {
     }),
     (req, res) => {
       const { companies } = res.locals
-      if (companies.length > 0) return res.status(200).json(companies)
-      res.status(204).send('No content found')
+      res.status(200).json(companies)
+    })
+
+  app.use((err, req, res, next) => {
+    if (!err.statusCode) err.statusCode = 500
+    res.status(err.statusCode).send(err.toString())
+  })
+
+  const port = 3000
+  app.listen(port, () => { console.log(`Server running on port ${port}...`) })
+}
+```
+
+## `mongoFindOne`
+
+Middleware wrapper for the MongoDB `findOne` method with optional parameter to format the result. The retrieved document will be available on the response via the `res.locals.result` by default.
+
+```js
+const express = require('express')
+const { MongoClient, ObjectID } = require('mongodb')
+const { mongoFindOne } = require('@fundaciobit/express-redis-mongo')
+
+const mongodbUri = 'mongodb://127.0.0.1:27017'
+
+// Open MongoDB connection
+MongoClient.connect(mongodbUri, { useUnifiedTopology: true, poolSize: 10 })
+  .then(client => {
+    createApp(client)
+  })
+  .catch(err => {
+    console.log(err.message)
+    process.exit(1)
+  })
+
+const createApp = (mongoClient) => {
+  const app = express()
+
+  app.get('/companies/:id',
+    mongoFindOne({
+      mongoClient,
+      db: 'companies_db',
+      collection: 'companies_col',
+      query: (req) => ({ _id: new ObjectID(req.params.id) }),
+      projection: { title: 1 },
+      formatResult: (doc) => ({ companyName: doc.title }),
+      responseProperty: 'company'
+    }),
+    (req, res) => {
+      const { company } = res.locals
+      if (company) return res.status(200).json(company)
+      res.status(404).send('Document not found')
     })
 
   app.use((err, req, res, next) => {
@@ -198,7 +249,7 @@ const createApp = (mongoClient) => {
 
 ## `mongoInsertOne`
 
-Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a collection. The `_id` of the inserted document is available on the response via the `res.locals.insertedId` by default.
+Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a collection. The `_id` value of the inserted document is available on the response via the `res.locals.insertedId` (ObjectID) by default.
 
 ```js
 const express = require('express')

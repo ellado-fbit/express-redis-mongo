@@ -1,7 +1,7 @@
 'use strict'
 
 // Middleware wrapper for the MongoDB 'insertOne' method. Inserts a document into a collection.
-// The _id of the inserted document is available on the response via 'res.locals.insertedId' by default.
+// The _id value of the inserted document is available on the response via 'res.locals.insertedId' <ObjectID> by default.
 
 const RequiredParamError  = require('../errors/errors').RequiredParamError
 
@@ -35,7 +35,7 @@ const mongoInsertOne = (props) => {
 
     mongoClient.db(db).collection(collection).insertOne(docToInsert(req, res))
       .then(result => {
-        res.locals[responseProperty] = result.insertedId
+        res.locals[responseProperty] = result.insertedId  // Note: The returned 'insertedId' is an instance of ObjectID (an object created with the 'ObjectID' constructor function)
         return next()
       })
       .catch(error => {

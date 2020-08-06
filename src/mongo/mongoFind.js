@@ -28,8 +28,8 @@ const mongoFind = (props) => {
       // Type checks
       if (typeof(db) !== 'string') throw new TypeError(`'db' parameter must be a string`)
       if (typeof(collection) !== 'string') throw new TypeError(`'collection' parameter must be a string`)
-      if (typeof(query) !== 'function') throw new TypeError('\'query\' parameter must be a function that accepts req object as parameter')
-      if (query(req).constructor !== Object) throw new TypeError('\'query\' function parameter must return an object')
+      if (typeof(query) !== 'function') throw new TypeError(`'query' parameter must be a function that accepts req object as parameter`)
+      if (query(req).constructor !== Object) throw new TypeError(`'query' function parameter must return an object`)
       if (projection.constructor !== Object) throw new TypeError(`'projection' parameter must be an object`)
       if (!Number.isInteger(limit)) throw new TypeError(`'limit' parameter must be an integer number`)
       if (typeof(sort) !== 'object') throw new TypeError(`'sort' parameter must be object or array`)

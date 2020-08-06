@@ -1,5 +1,5 @@
 const { MongoClient } = require('mongodb')
-const { mongoFind, mongoInsertOne, mongoDeleteOne } = require('../')
+const { mongoFind, mongoFindOne, mongoInsertOne, mongoDeleteOne } = require('../')
 
 describe('Testing MongoBD middlewares...', () => {
   const mongodbUri = 'mongodb://127.0.0.1:27017'
@@ -32,7 +32,7 @@ describe('Testing MongoBD middlewares...', () => {
     })
     middleware(req, res, err => {
       expect(res.locals.insertedId).toBeDefined()
-      req.insertedId = res.locals.insertedId
+      req.insertedId = res.locals.insertedId  // Note: The returned 'insertedId' is an instance of ObjectID (an object created with the 'ObjectID' constructor function)
       expect(err).toBeUndefined()
       done()
     })
@@ -74,6 +74,73 @@ describe('Testing MongoBD middlewares...', () => {
     middleware(req, res, err => {
       const { companies } = res.locals
       expect(companies[0].companyName).toBe('MENORCA A CAVALL')
+      expect(err).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`[mongoFind] Find documents of empty collection`, done => {
+    const middleware = mongoFind({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_empty_col',
+      // eslint-disable-next-line no-unused-vars
+      query: (req) => ({ }),
+      responseProperty: 'companies'
+    })
+    middleware(req, res, err => {
+      const { companies } = res.locals
+      expect(companies.length).toBe(0)
+      expect(err).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`[mongoFindOne] Find one document in collection`, done => {
+    const middleware = mongoFindOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      query: (req) => ({ _id: req.insertedId }),
+      projection: { title: 1 }
+    })
+    middleware(req, res, err => {
+      const { result } = res.locals
+      expect(result.title).toBe('MENORCA A CAVALL')
+      expect(err).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`[mongoFindOne] Find one document in collection with 'formatResult' and 'responseProperty' parameters`, done => {
+    const middleware = mongoFindOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      query: (req) => ({ _id: req.insertedId }),
+      projection: { title: 1 },
+      formatResult: (doc) => ({ companyName: doc.title }),
+      responseProperty: 'company'
+    })
+    middleware(req, res, err => {
+      const { company } = res.locals
+      expect(company.companyName).toBe('MENORCA A CAVALL')
+      expect(err).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`[mongoFindOne] Find a non existing document in collection`, done => {
+    const middleware = mongoFindOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      // eslint-disable-next-line no-unused-vars
+      query: (req) => ({ _id: 'abcde12345' })
+    })
+    middleware(req, res, err => {
+      const { result } = res.locals
+      expect(result).toBeNull()
       expect(err).toBeUndefined()
       done()
     })
