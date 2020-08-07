@@ -1,5 +1,5 @@
 const { MongoClient } = require('mongodb')
-const { mongoFind, mongoFindOne, mongoInsertOne, mongoDeleteOne } = require('../')
+const { mongoFind, mongoFindOne, mongoInsertOne, mongoDeleteOne, mongoUpdateOne, mongoReplaceOne } = require('../')
 
 describe('Testing MongoBD middlewares...', () => {
   const mongodbUri = 'mongodb://127.0.0.1:27017'
@@ -22,6 +22,48 @@ describe('Testing MongoBD middlewares...', () => {
   }}
   const res = { locals: {} }
 
+  // ----------------
+  // Checking errors
+  // ----------------
+
+  test(`[mongoFind] (check error) 'mongoClient' parameter is required`, done => {
+    const middleware = mongoFind({})
+    middleware(req, res, err => {
+      expect(err).toBeDefined()
+      expect(err.message).toMatch(/'mongoClient' parameter is required/)
+      done()
+    })
+  })
+
+  test(`[mongoFind] (check error) 'db' parameter is required`, done => {
+    const middleware = mongoFind({
+      mongoClient
+    })
+    middleware(req, res, err => {
+      expect(err).toBeDefined()
+      expect(err.message).toMatch(/'db' parameter is required/)
+      done()
+    })
+  })
+
+  test(`[mongoFind] (check error) 'collection' parameter is required`, done => {
+    const middleware = mongoFind({
+      mongoClient,
+      db: 'test_db'
+    })
+    middleware(req, res, err => {
+      expect(err).toBeDefined()
+      expect(err.message).toMatch(/'collection' parameter is required/)
+      done()
+    })
+  })
+
+  // ------------------------
+  // Testing functionalities
+  // ------------------------
+
+  // mongoInsertOne
+  // ---------------
   test(`+[mongoInsertOne] Insert document into collection`, done => {
     const middleware = mongoInsertOne({
       mongoClient,
@@ -38,6 +80,8 @@ describe('Testing MongoBD middlewares...', () => {
     })
   })
 
+  // mongoFind
+  // ----------
   test(`[mongoFind] Find document in collection`, done => {
     const middleware = mongoFind({
       mongoClient,
@@ -96,6 +140,8 @@ describe('Testing MongoBD middlewares...', () => {
     })
   })
 
+  // mongoFindOne
+  // -------------
   test(`[mongoFindOne] Find one document in collection`, done => {
     const middleware = mongoFindOne({
       mongoClient,
@@ -146,44 +192,131 @@ describe('Testing MongoBD middlewares...', () => {
     })
   })
 
-  test(`[mongoFind] (check error) 'mongoClient' parameter is required`, done => {
-    const middleware = mongoFind({})
-    middleware(req, res, err => {
-      expect(err).toBeDefined()
-      expect(err.message).toMatch(/'mongoClient' parameter is required/)
-      done()
-    })
-  })
-
-  test(`[mongoFind] (check error) 'db' parameter is required`, done => {
-    const middleware = mongoFind({
-      mongoClient
-    })
-    middleware(req, res, err => {
-      expect(err).toBeDefined()
-      expect(err.message).toMatch(/'db' parameter is required/)
-      done()
-    })
-  })
-
-  test(`[mongoFind] (check error) 'collection' parameter is required`, done => {
-    const middleware = mongoFind({
+  // mongoUpdateOne
+  // ---------------
+  test(`+[mongoUpdateOne] Update one document in collection`, done => {
+    const middleware = mongoUpdateOne({
       mongoClient,
-      db: 'test_db'
+      db: 'test_db',
+      collection: 'test_col',
+      filter: (req) => ({ _id: req.insertedId }),
+      // eslint-disable-next-line no-unused-vars
+      contentToUpdate: (req, res) => ({ title: 'Pepito company', city: 'Palma' })
     })
     middleware(req, res, err => {
-      expect(err).toBeDefined()
-      expect(err.message).toMatch(/'collection' parameter is required/)
+      expect(err).toBeUndefined()
       done()
     })
   })
 
-  test(`-[mongoDeleteOne] Deletes a document in collection`, done => {
+  test(`[mongoFindOne] Checks updated document`, done => {
+    const middleware = mongoFindOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      // eslint-disable-next-line no-unused-vars
+      query: (req) => ({ _id: req.insertedId })
+    })
+    middleware(req, res, err => {
+      const { result } = res.locals
+      expect(err).toBeUndefined()
+      expect(result.title).toBe('Pepito company')
+      expect(result.city).toBe('Palma')
+      done()
+    })
+  })
+
+  // mongoReplaceOne
+  // ----------------
+  test(`+[mongoReplaceOne] Replace one document in collection`, done => {
+    const middleware = mongoReplaceOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      filter: (req) => ({ _id: req.insertedId }),
+      // eslint-disable-next-line no-unused-vars
+      contentToReplace: (req, res) => ({ name: 'Manolito company' })
+    })
+    middleware(req, res, err => {
+      expect(err).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`[mongoFindOne] Checks replaced document`, done => {
+    const middleware = mongoFindOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      // eslint-disable-next-line no-unused-vars
+      query: (req) => ({ _id: req.insertedId })
+    })
+    middleware(req, res, err => {
+      const { result } = res.locals
+      expect(err).toBeUndefined()
+      expect(result.name).toBe('Manolito company')
+      expect(result.city).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`+[mongoReplaceOne] Creates a new (upserted) document in collection via { upsert: true }`, done => {
+    const middleware = mongoReplaceOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      // eslint-disable-next-line no-unused-vars
+      filter: (req) => ({ name: 'kkk' }),
+      // eslint-disable-next-line no-unused-vars
+      contentToReplace: (req, res) => ({ name: 'Upserted company' }),
+      upsert: true
+    })
+    middleware(req, res, err => {
+      expect(err).toBeUndefined()
+      expect(res.locals.upsertedId).toBeDefined()
+      req.upsertedId = res.locals.upsertedId
+      done()
+    })
+  })
+
+  test(`[mongoFindOne] Checks upserted document`, done => {
+    const middleware = mongoFindOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      // eslint-disable-next-line no-unused-vars
+      query: (req) => ({ _id: req.upsertedId })
+    })
+    middleware(req, res, err => {
+      const { result } = res.locals
+      expect(err).toBeUndefined()
+      expect(result.name).toBe('Upserted company')
+      expect(result.city).toBeUndefined()
+      done()
+    })
+  })
+
+  // mongoDeleteOne
+  // ---------------
+  test(`-[mongoDeleteOne] Deletes a document in collection (req.insertedId)`, done => {
     const middleware = mongoDeleteOne({
       mongoClient,
       db: 'test_db',
       collection: 'test_col',
       filter: (req) => ({ _id: req.insertedId })
+    })
+    middleware(req, res, err => {
+      expect(err).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`-[mongoDeleteOne] Deletes a document in collection (req.upsertedId)`, done => {
+    const middleware = mongoDeleteOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      filter: (req) => ({ _id: req.upsertedId })
     })
     middleware(req, res, err => {
       expect(err).toBeUndefined()
@@ -197,6 +330,24 @@ describe('Testing MongoBD middlewares...', () => {
       db: 'test_db',
       collection: 'test_col',
       query: (req) => ({ _id: req.insertedId }),
+      projection: { title: 1 },
+      limit: 0,
+      sort: { title: 1 }
+    })
+    middleware(req, res, err => {
+      const { results } = res.locals
+      expect(results.length).toBe(0)
+      expect(err).toBeUndefined()
+      done()
+    })
+  })
+
+  test(`[mongoFind] Find a non existing document in collection (after deletion), part 2`, done => {
+    const middleware = mongoFind({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      query: (req) => ({ _id: req.upsertedId }),
       projection: { title: 1 },
       limit: 0,
       sort: { title: 1 }

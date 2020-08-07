@@ -46,14 +46,50 @@ const createApp = (mongoClient) => {
       res.status(200).json(companies)
     })
 
+  app.get('/companies/format',
+    mongoFind({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      // eslint-disable-next-line no-unused-vars
+      query: (req) => ({ }),
+      projection: { _id: 0 },
+      sort: { name: 1 },
+      formatResults: {
+        formatters: [
+          (docs) => { docs.forEach(doc => { doc.companyName = doc.name; delete doc.name }); return docs },
+          (docs) => { docs.forEach(doc => { doc.address = `${doc.address}, ${doc.postalCode} (${doc.city})`; delete doc.postalCode; delete doc.city }); return docs }
+        ]
+      },
+      responseProperty: 'companies'
+    }),
+    (req, res) => {
+      const { companies } = res.locals
+      res.status(200).json(companies)
+    })
+
   app.get('/companies/:id',
     mongoFindOne({
       mongoClient,
       db: 'test_db',
       collection: 'test_col',
       query: (req) => ({ _id: new ObjectID(req.params.id) }),
-      // projection: { title: 1 },
-      // formatResult: (doc) => ({ companyName: doc.title }),
+      responseProperty: 'company'
+    }),
+    (req, res) => {
+      const { company } = res.locals
+      if (company) return res.status(200).json(company)
+      res.status(404).send('Document not found')
+    })
+
+  app.get('/companies/:id/format',
+    mongoFindOne({
+      mongoClient,
+      db: 'test_db',
+      collection: 'test_col',
+      query: (req) => ({ _id: new ObjectID(req.params.id) }),
+      projection: { _id: 0 },
+      formatResult: (doc) => ({ companyName: doc.name, address: `${doc.address}, ${doc.postalCode} (${doc.city})` }),
       responseProperty: 'company'
     }),
     (req, res) => {

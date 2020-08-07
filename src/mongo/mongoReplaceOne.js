@@ -1,6 +1,6 @@
 'use strict'
 
-// Middleware wrapper for the MongoDB 'updateOne' method. Replaces a single document within the collection based on the filter.
+// Middleware wrapper for the MongoDB 'replaceOne' method. Replaces a single document within the collection based on the filter.
 // If `upsert: true` and no documents match the filter, `mongoReplaceOne` creates a new document based on the replacement document (in this case ...
 // ... the _id value of the upserted document is available on the response via 'res.locals.upsertedId' <String> by default).
 
