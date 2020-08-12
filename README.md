@@ -42,8 +42,8 @@ Middleware wrapper for the Redis `GET` command. Get the value of a key from the 
 
 - `client`: (*required*) Redis client.
 - `key`: (*required*) Function that accepts the request object as parameter, that returns the key (string).
-- `parseResults`: (*optional*) Boolean that indicates if the extracted value from Redis must be JSON parsed.
-- `responseProperty`: (*optional*) String. Property name on the response object where the returned value will be stored, `res.locals[responseProperty]`. if not specified, the value will be available on `res.locals.redisValue`.
+- `parseResults`: (*optional*) Boolean that indicates if the extracted value from Redis must be JSON parsed. Default value: `false`.
+- `responseProperty`: (*optional*) String. Property name on the response object `res.locals` where the returned value will be stored ( `res.locals[responseProperty]` ). Default property: `res.locals.redisValue`.
 
 ### Usage
 
@@ -177,11 +177,11 @@ Middleware wrapper of the MongoDB `find` method to query documents of the specif
 - `mongoClient`: (*required*) MongoDB client.
 - `db`: (*required*) String. Database name.
 - `collection`: (*required*) String. Collection name.
-- `query`: (*required*) Function that accepts the request object as parameter, that returns the query (object).
+- `query`: (*required*) Function that accepts the request object as parameter, that returns the query object.
 - `projection`: (*optional*) Object. Projection query with the fields that will be returned.
-- `limit`: (*optional*) Number. The number of returned results.
+- `limit`: (*optional*) Number. The number of returned results. Default value: `0` (0 is equivalent to setting no limit).
 - `sort`: (*optional*) Object. List of fields on which to sort the results. To specify sorting order, 1 and -1 are used. 1 is used for ascending order while -1 is used for descending order.
-- `responseProperty`: (*optional*) String. Property name on the response object where the returned docs will be stored, `res.locals[responseProperty]`. if not specified, the docs will be available on `res.locals.results`.
+- `responseProperty`: (*optional*) String. Property name on the response object `res.locals` where the returned docs will be stored ( `res.locals[responseProperty]` ). Default property: `res.locals.results`.
 - `formatResults`: (*optional*) Object to list formatters that transform results. The `formatters` property must be an array of functions. Each function accepts `docs` as parameter and returns the formatted results. The transformed results are pipelined through formatters.
 
 ### Usage
@@ -249,9 +249,9 @@ Middleware wrapper for the MongoDB `findOne` method with optional parameter to f
 - `mongoClient`: (*required*) MongoDB client.
 - `db`: (*required*) String. Database name.
 - `collection`: (*required*) String. Collection name.
-- `query`: (*required*) Function that accepts the request object as parameter, that returns the query (object).
+- `query`: (*required*) Function that accepts the request object as parameter, that returns the query object.
 - `projection`: (*optional*) Object. Projection query with the fields that will be returned.
-- `responseProperty`: (*optional*) String. Property name on the response object where the returned doc will be stored, `res.locals[responseProperty]`. if not specified, the doc will be available on `res.locals.result`.
+- `responseProperty`: (*optional*) String. Property name on the response object `res.locals` where the returned doc will be stored ( `res.locals[responseProperty]` ). Default property: `res.locals.result`.
 - `formatResult`: (*optional*) Function to transform the query result. The function accepts `doc` as parameter and returns the formatted result.
 
 ### Usage
@@ -312,7 +312,7 @@ Middleware wrapper for the MongoDB `insertOne` method. Inserts a document into a
 - `db`: (*required*) String. Database name.
 - `collection`: (*required*) String. Collection name.
 - `docToInsert`: (*required*) Function that accepts the request and response objects as parameters, that returns the document to insert (object).
-- `responseProperty`: (*optional*) String. Property name on the response object where the inserted `_id` will be stored, `res.locals[responseProperty]`. if not specified, the `_id` will be available on `res.locals.insertedId`. The `_id` is returned as an ObjectID.
+- `responseProperty`: (*optional*) String. Property name on the response object `res.locals` where the inserted `_id` will be stored ( `res.locals[responseProperty]` ). If not specified, the `_id` will be available on the property `res.locals.insertedId`. The `_id` is returned as an ObjectID.
 
 ### Usage
 
@@ -369,7 +369,7 @@ Middleware wrapper for the MongoDB `updateOne` method. Update a single document 
 - `mongoClient`: (*required*) MongoDB client.
 - `db`: (*required*) String. Database name.
 - `collection`: (*required*) String. Collection name.
-- `filter`: (*required*) Function that accepts the request object as parameter, that returns the query (object).
+- `filter`: (*required*) Function that accepts the request object as parameter, that returns the query object.
 - `contentToUpdate`: (*required*) Function that accepts the request and response objects as parameters, that returns the document fields to update (object).
 
 ### Usage
@@ -420,17 +420,17 @@ const createApp = (mongoClient) => {
 
 ## `mongoReplaceOne`
 
-Middleware wrapper for the MongoDB `replaceOne` method. Replaces a single document within the collection based on the filter. If `upsert: true` and no documents match the filter, `mongoReplaceOne` creates a new document based on the replacement document (in this case the `_id` value of the upserted document is available on the response via `res.locals.upsertedId` (String) by default).
+Middleware wrapper for the MongoDB `replaceOne` method. Replaces a single document within the collection based on the filter. If `upsert: true` and no documents match the filter, then `mongoReplaceOne` creates a new document based on the replacement document and the `_id` value of the upserted document will be available on the response via `res.locals.upsertedId` (String) by default.
 
 ### Parameters
 
 - `mongoClient`: (*required*) MongoDB client.
 - `db`: (*required*) String. Database name.
 - `collection`: (*required*) String. Collection name.
-- `filter`: (*required*) Function that accepts the request object as parameter, that returns the query (object).
+- `filter`: (*required*) Function that accepts the request object as parameter, that returns the query object.
 - `contentToReplace`: (*required*) Function that accepts the request and response objects as parameters, that returns the document to replace (object).
-- `upsert`: (*optional*) Boolean. Indicates creation of a new document if `upsert: true` and no documents match the filter.
-- `responseProperty`: (*optional*) String. Property name on the response object where the upserted `_id` will be stored, `res.locals[responseProperty]`. if not specified, the `_id` will be available on `res.locals.upsertedId`. The `_id` is returned as a string.
+- `upsert`: (*optional*) Boolean. Indicates creation of a new document if `upsert: true` and no documents match the filter. Default value: `false`.
+- `responseProperty`: (*optional*) String. Property name on the response object `res.locals` where the upserted `_id` will be stored ( `res.locals[responseProperty]` ). If not specified, the `_id` will be available on `res.locals.upsertedId`. The `_id` is returned as a string.
 
 ### Usage
 
@@ -489,7 +489,7 @@ Middleware wrapper for the MongoDB `deleteOne` operation. Deletes the first docu
 - `mongoClient`: (*required*) MongoDB client.
 - `db`: (*required*) String. Database name.
 - `collection`: (*required*) String. Collection name.
-- `filter`: (*required*) Function that accepts the request object as parameter, that returns the query (object).
+- `filter`: (*required*) Function that accepts the request object as parameter, that returns the query object.
 
 ### Usage
 
