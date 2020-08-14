@@ -497,7 +497,7 @@ Middleware wrapper for the MongoDB `deleteOne` operation. Deletes the first docu
 
 ```js
 const express = require('express')
-const { MongoClient } = require('mongodb')
+const { MongoClient, ObjectID } = require('mongodb')
 const { mongoDeleteOne } = require('@fundaciobit/express-redis-mongo')
 
 const mongodbUri = 'mongodb://127.0.0.1:27017'
@@ -515,15 +515,15 @@ MongoClient.connect(mongodbUri, { useUnifiedTopology: true, poolSize: 10 })
 const createApp = (mongoClient) => {
   const app = express()
 
-  app.delete('/companies/id/:id',
+  app.delete('/companies/:id',
     mongoDeleteOne({
       mongoClient,
       db: 'companies_db',
       collection: 'companies_col',
-      filter: (req) => ({ _id: req.params.id })
+      filter: (req) => ({ _id: new ObjectID(req.params.id) })
     }),
     (req, res) => {
-      res.sendStatus(200)
+      res.status(200).send('Document successfully deleted')
     })
 
   app.use((err, req, res, next) => {
@@ -546,9 +546,9 @@ The following use case shows the combination of several Express middlewares to a
 const express = require('express')
 const bodyParser = require('body-parser')
 const redis = require('redis')
-const { MongoClient } = require('mongodb')
+const { MongoClient, ObjectID } = require('mongodb')
 const { ipv4, validateJsonSchema, signJWT, verifyJWT } = require('@fundaciobit/express-middleware')
-const { redisGet, redisSet, mongoFindOne, mongoFind, mongoInsertOne } = require('@fundaciobit/express-redis-mongo')
+const { redisGet, redisSet, redisDel, mongoFindOne, mongoFind, mongoInsertOne, mongoUpdateOne, mongoDeleteOne } = require('@fundaciobit/express-redis-mongo')
 
 const mongodbUri = 'mongodb://127.0.0.1:27017'
 const db = 'users_db'
@@ -562,14 +562,14 @@ const usersSchema = {
   required: ['username', 'password', 'isAdmin', 'name', 'surname', 'age', 'address', 'city', 'postalCode'],
   properties: {
     username: { type: 'string' },
-    password: { type: 'string' },
+    password: { type: 'string', minLength: 6, maxLength: 10 },
     isAdmin: { type: 'boolean' },
     name: { type: 'string' },
     surname: { type: 'string' },
     age: { type: 'number', minimum: 0 },
     address: { type: 'string' },
     city: { type: 'string' },
-    postalCode: { type: 'string' }
+    postalCode: { type: 'string', pattern: '^\\d+$' }
   },
   additionalProperties: false
 }
@@ -579,12 +579,12 @@ const loginSchema = {
   required: ['username', 'password'],
   properties: {
     username: { type: 'string' },
-    password: { type: 'string' }
+    password: { type: 'string', minLength: 6, maxLength: 10 }
   },
   additionalProperties: false
 }
 
-const secret = 'mimamamemima'
+const secret = 'my_secret'
 const ipAddressesWhitelist = ['120.230.33.44', '120.230.33.45', '127.0.0.1']
 
 class AuthenticationError extends Error {
@@ -668,15 +668,48 @@ const createApp = (mongoClient) => {
         console.log('Sending Redis cached results...')
         res.status(200).json(redisValue)  // Sending chached results
       } else {
-        next()  // Key not found, then searching users in MongoDB...
+        next()  // Key not found, proceed to searching users in MongoDB...
       }
     },
     mongoFind({ mongoClient, db, collection, query: (req) => ({ city: req.params.city }), formatResults: { formatters: [(docs) => { return docs.map(x => ({ name: x.name, age: x.age })) }] } }),
-    redisSet({ client, key: (req) => req.path, value: (req, res) => JSON.stringify(res.locals.results), expiration: 30 }),  // Caching results in Redis for 30 seconds
+    redisSet({ client, key: (req) => req.path, value: (req, res) => JSON.stringify(res.locals.results), expiration: 60 }),  // Caching results in Redis for 60 seconds
     (req, res) => {
       console.log(' ...caching MongoDB results in Redis, sending results...')
       res.status(200).json(res.locals.results)
     })
+
+  // Update users endpoint (emptying cache after updation)
+  // ------------------------------------------------------
+  const usersSchemaNoRequired = { ...usersSchema }
+  delete usersSchemaNoRequired.required  // Deleted the 'required' field of the JSON schema to support validation of a subset of fields
+  app.patch('/users/:id',
+    verifyJWT({ secret }),
+    (req, res, next) => {
+      if (!req.tokenPayload.isAdmin) throw new AuthenticationError(`Only admin users can update users`)
+      next()
+    },
+    validateJsonSchema({ schema: usersSchemaNoRequired, instanceToValidate: (req) => req.body }),
+    mongoUpdateOne({ mongoClient, db, collection, filter: (req) => ({ _id: new ObjectID(req.params.id) }), contentToUpdate: (req, res) => ({ ...req.body }) }),
+    // Remove all related key/values from Redis cache
+    redisDel({ client, key: (req) => `/users/city/Palma` }),
+    redisDel({ client, key: (req) => `/users/city/La%20Habana` }),
+    (req, res) => { res.status(200).send('Document successfully updated. Cache removed.') }
+  )
+
+  // Delete users endpoint (emptying cache after deletion)
+  // ------------------------------------------------------
+  app.delete('/users/:id',
+    verifyJWT({ secret }),
+    (req, res, next) => {
+      if (!req.tokenPayload.isAdmin) throw new AuthenticationError(`Only admin users can delete users`)
+      next()
+    },
+    mongoDeleteOne({ mongoClient, db, collection, filter: (req) => ({ _id: new ObjectID(req.params.id) }) }),
+    // Remove all related key/values from Redis cache
+    redisDel({ client, key: (req) => `/users/city/Palma` }),
+    redisDel({ client, key: (req) => `/users/city/La%20Habana` }),
+    (req, res) => { res.status(200).send('Document successfully deleted. Cache removed.') }
+  )
 
   app.use((err, req, res, next) => {
     if (!err.statusCode) err.statusCode = 500

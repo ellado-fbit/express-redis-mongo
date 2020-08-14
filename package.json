@@ -1,6 +1,6 @@
 {
   "name": "@fundaciobit/express-redis-mongo",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "A useful collection of Express middleware wrappers for Redis and MongoDB.",
   "author": "Esteve Lladó <ellado@fundaciobit.org>",
   "main": "index.js",
