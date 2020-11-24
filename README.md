@@ -15,6 +15,7 @@ A useful collection of Express middleware wrappers for Redis and MongoDB.
 | mongoUpdateOne  | Update a single document in a MongoDB collection.                       |
 | mongoReplaceOne | Replace a single document in a MongoDB collection.                      |
 | mongoDeleteOne  | Delete a document from a MongoDB collection.                            |
+| mongoCreateIndex| Creates an index on a MongoDB collection.                               |
 
 ## Install
 
@@ -33,6 +34,7 @@ npm install @fundaciobit/express-redis-mongo
 - [`mongoUpdateOne`](#mongoupdateone)
 - [`mongoReplaceOne`](#mongoreplaceone)
 - [`mongoDeleteOne`](#mongodeleteone)
+- [`mongoCreateIndex`](#mongocreateindex)
 - [Sample Use Case of Combined Middlewares](#sample-use-case-of-combined-middlewares)
 
 ## `redisGet`
@@ -524,6 +526,60 @@ const createApp = (mongoClient) => {
     }),
     (req, res) => {
       res.status(200).send('Document successfully deleted')
+    })
+
+  app.use((err, req, res, next) => {
+    if (!err.statusCode) err.statusCode = 500
+    res.status(err.statusCode).send(err.toString())
+  })
+
+  const port = 3000
+  app.listen(port, () => { console.log(`Server running on port ${port}...`) })
+}
+```
+
+## `mongoCreateIndex`
+
+Middleware wrapper for the MongoDB `createIndex` method. Creates an index on a MongoDB collection.
+
+### Parameters
+
+- `mongoClient`: (*required*) MongoDB client.
+- `db`: (*required*) String. Database name.
+- `collection`: (*required*) String. Collection name.
+- `keys`: (*required*) Object. Contains the field and value pairs where the field is the index key and the value describes the type of index for that field (see MongoDB documentation for details).
+- `options`: (*optional*) Object. Contains a set of options that controls the creation of the index (see MongoDB documentation for details).
+
+### Usage
+
+```js
+const express = require('express')
+const bodyParser = require('body-parser')
+const { MongoClient } = require('mongodb')
+const { mongoInsertOne, mongoCreateIndex } = require('@fundaciobit/express-redis-mongo')
+
+const mongodbUri = 'mongodb://127.0.0.1:27017'
+
+// Open MongoDB connection
+MongoClient.connect(mongodbUri, { useUnifiedTopology: true, poolSize: 10 })
+  .then(client => {
+    createApp(client)
+  })
+  .catch(err => {
+    console.log(err.message)
+    process.exit(1)
+  })
+
+const createApp = (mongoClient) => {
+  const app = express()
+  app.use(bodyParser.json())
+
+  app.post('/companies',
+    mongoInsertOne({ mongoClient, db: 'companies_db', collection: 'companies_col', docToInsert: (req, res) => req.body }),
+    mongoCreateIndex({ mongoClient, db, collection, keys: { company_id: 1 }, options: { sparse: true, unique: true } }),
+    (req, res) => {
+      const { insertedId } = res.locals
+      res.status(200).json({ _id: insertedId })
     })
 
   app.use((err, req, res, next) => {

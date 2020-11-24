@@ -9,6 +9,7 @@ const mongoInsertOne = require('./src/mongo/mongoInsertOne')
 const mongoDeleteOne = require('./src/mongo/mongoDeleteOne')
 const mongoUpdateOne = require('./src/mongo/mongoUpdateOne')
 const mongoReplaceOne = require('./src/mongo/mongoReplaceOne')
+const mongoCreateIndex = require('./src/mongo/mongoCreateIndex')
 
 module.exports = {
   redisGet: redisGet,
@@ -19,5 +20,6 @@ module.exports = {
   mongoInsertOne: mongoInsertOne,
   mongoDeleteOne: mongoDeleteOne,
   mongoUpdateOne: mongoUpdateOne,
-  mongoReplaceOne: mongoReplaceOne
+  mongoReplaceOne: mongoReplaceOne,
+  mongoCreateIndex: mongoCreateIndex
 }

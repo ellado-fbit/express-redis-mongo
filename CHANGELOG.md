@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.4] - 2020-11-24
+
+### Changed
+
+- Added new middleware to create indexes on MongoDB collections (`mongoCreateIndex`).
+
 ## [1.4.3] - 2020-08-14
 
 ### Changed
