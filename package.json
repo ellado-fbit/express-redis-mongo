@@ -21,7 +21,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@fundaciobit/express-middleware": "^1.7.3",
+    "@fundaciobit/express-middleware": "^1.7.8",
     "body-parser": "^1.19.0",
     "eslint": "^7.2.0",
     "express": "^4.17.1",
